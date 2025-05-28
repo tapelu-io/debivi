@@ -61,18 +61,26 @@ WINEHQ_KEY_PATH="/usr/share/keyrings/winehq-archive.key" # Standard path for APT
 BUILD_SCRIPT_DEPS="dpkg-dev wget ca-certificates gnupg"
 
 # Runtime dependencies for the final .deb package (resolved on the target system)
+# These are ESSENTIAL for the core functionality of wine-runner-suite and its features.
 RUNTIME_DEPS_BASE="winehq-stable (>= 8.0) | winehq-devel (>= 8.0) | wine (>= 7.0), \
-libvulkan1, mesa-vulkan-drivers | nvidia-driver-535 | nvidia-driver-545 | nvidia-driver-550 | nvidia-driver-555, \
-steam-installer | steam, \
-zram-tools | zram-config, \
-cpupowerutils | linux-tools-common, \
-winetricks, libnotify-bin, xdg-utils, \
-zenity | kdialog" # For GUI prompts (desktop shortcut creation)
+libvulkan1, \
+mesa-vulkan-drivers | nvidia-driver-535 | nvidia-driver-545 | nvidia-driver-550 | nvidia-driver-555, \
+winetricks, \
+libnotify-bin, \
+xdg-utils, \
+zenity | kdialog"
 
-# Recommended packages for enhanced functionality
-RUNTIME_RECOMMENDED="dxvk (>= 2.1), icoutils, \
-ttf-mscorefonts-installer, cabextract, p7zip-full, \
-gstreamer1.0-plugins-good, gstreamer1.0-plugins-bad, gstreamer1.0-plugins-ugly, gstreamer1.0-libav"
+# Recommended packages for enhanced functionality and broader application compatibility.
+# Users can choose not to install these, and wine-runner-suite should degrade gracefully where possible.
+RUNTIME_RECOMMENDED="dxvk (>= 2.1), \
+icoutils, \
+ttf-mscorefonts-installer, \
+cabextract, \
+p7zip-full, \
+gstreamer1.0-plugins-good, gstreamer1.0-plugins-bad, gstreamer1.0-plugins-ugly, gstreamer1.0-libav, \
+steam-installer | steam, \
+zram-tools | zram-config"
+
 
 # --- Helper Functions for Build Script ---
 _log_msg() { echo "INFO: $1" | tee -a "$APT_LOG"; }
@@ -264,7 +272,7 @@ if [ \$INSTALL_MODE -eq 1 ]; then
                         if icotool -x --width=48 --height=48 -o "\$CONVERTED_ICON_PNG" "\$ICON_ICO_FILE" >/dev/null 2>&1 && [ -s "\$CONVERTED_ICON_PNG" ]; then APP_ICON_PATH="\$CONVERTED_ICON_PNG"; 
                         elif icotool -x -o "\$CONVERTED_ICON_PNG" "\$ICON_ICO_FILE" >/dev/null 2>&1 && [ -s "\$CONVERTED_ICON_PNG" ]; then APP_ICON_PATH="\$CONVERTED_ICON_PNG"; fi; fi; fi
                 trap - EXIT INT TERM; _cleanup_icon_tmp 
-            else echo "Info: icoutils not found for icon extraction."; fi
+            else echo "Info: icoutils (wrestool/icotool) not found. Cannot extract icon. Please install 'icoutils' package for this feature."; fi
             mkdir -p "\$(dirname "\$DESKTOP_SHORTCUT_PATH")"
             echo -e "[Desktop Entry]\nVersion=1.0\nName=\${USER_APP_NAME}\nExec=/usr/bin/wine-runner \"\${APP_EXE_FOUND}\"\nType=Application\nIcon=\${APP_ICON_PATH}\nComment=Run \${USER_APP_NAME}\nCategories=X-Wine;Application;\nStartupWMClass=\${APP_BASENAME}" > "\$DESKTOP_SHORTCUT_PATH"; chmod +x "\$DESKTOP_SHORTCUT_PATH"
             if command -v update-desktop-database >/dev/null; then update-desktop-database -q "\$(dirname "\$(dirname "\$DESKTOP_SHORTCUT_PATH")")"; fi; fi
